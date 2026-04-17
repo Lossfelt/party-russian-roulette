@@ -10,6 +10,11 @@ export interface Player {
   survivals: number;
 }
 
+export interface Settings {
+  sound: boolean;
+  haptics: boolean;
+}
+
 export interface GameState {
   screen: Screen;
   mode: GameMode;
@@ -21,6 +26,7 @@ export interface GameState {
   round: number;
   lastResult: 'safe' | 'hit' | null;
   punishmentCard: string | null;
+  settings: Settings;
 }
 
 export type GameAction =
@@ -32,4 +38,6 @@ export type GameAction =
   | { type: 'PULL_TRIGGER' }
   | { type: 'NEXT_TURN' }
   | { type: 'END_GAME' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'TOGGLE_SOUND' }
+  | { type: 'TOGGLE_HAPTICS' };

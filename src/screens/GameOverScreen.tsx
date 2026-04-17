@@ -1,8 +1,13 @@
+import { useEffect, useState } from 'react';
 import { useGame, useGameDispatch } from '../context/GameContext';
+import { Confetti } from '../components/Confetti';
+import { audio } from '../lib/audio';
+import { haptic } from '../lib/haptic';
 
 export function GameOverScreen() {
   const { players, mode, round } = useGame();
   const dispatch = useGameDispatch();
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const sortedPlayers = [...players].sort((a, b) => {
     if (mode === 'knockout') {
@@ -19,13 +24,23 @@ export function GameOverScreen() {
   const mostUnlucky = [...players].sort((a, b) => b.hits - a.hits)[0];
   const longestStreak = [...players].sort((a, b) => b.survivals - a.survivals)[0];
 
+  useEffect(() => {
+    if (winner) {
+      setShowConfetti(true);
+      audio.playWin();
+      haptic.success();
+    }
+  }, [winner]);
+
   return (
     <div className="screen gameover-screen">
-      <h2>Game Over</h2>
+      <Confetti active={showConfetti} />
+      <h2 className="display-heading gameover-title">Game Over</h2>
 
       {winner && (
         <div className="winner-banner" style={{ color: winner.color }}>
-          {winner.name} wins!
+          <div className="winner-crown">★</div>
+          <div>{winner.name} wins!</div>
         </div>
       )}
 

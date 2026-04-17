@@ -1,6 +1,15 @@
-import { createContext, useContext, useReducer, type ReactNode, type Dispatch } from 'react';
-import type { GameState, GameAction, Player } from '../types';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  type ReactNode,
+  type Dispatch,
+} from 'react';
+import type { GameState, GameAction, Player, Settings } from '../types';
 import { getRandomPunishment } from '../data/punishments';
+import { audio } from '../lib/audio';
+import { haptic } from '../lib/haptic';
 
 const PLAYER_COLORS = [
   '#e74c3c',
@@ -15,6 +24,34 @@ const PLAYER_COLORS = [
   '#8bc34a',
 ];
 
+const SETTINGS_KEY = 'party-roulette-settings';
+
+function loadSettings(): Settings {
+  if (typeof localStorage === 'undefined') {
+    return { sound: true, haptics: true };
+  }
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return { sound: true, haptics: true };
+    const parsed = JSON.parse(raw) as Partial<Settings>;
+    return {
+      sound: parsed.sound ?? true,
+      haptics: parsed.haptics ?? true,
+    };
+  } catch {
+    return { sound: true, haptics: true };
+  }
+}
+
+function saveSettings(s: Settings) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
 function createPlayer(index: number): Player {
   return {
     id: crypto.randomUUID(),
@@ -26,24 +63,28 @@ function createPlayer(index: number): Player {
   };
 }
 
-const initialState: GameState = {
-  screen: 'start',
-  mode: 'classic',
-  players: [],
-  currentPlayerIndex: 0,
-  chambers: 6,
-  bullets: 1,
-  lastBulletCount: 1,
-  round: 1,
-  lastResult: null,
-  punishmentCard: null,
-};
+function makeInitialState(): GameState {
+  return {
+    screen: 'start',
+    mode: 'classic',
+    players: [],
+    currentPlayerIndex: 0,
+    chambers: 6,
+    bullets: 1,
+    lastBulletCount: 1,
+    round: 1,
+    lastResult: null,
+    punishmentCard: null,
+    settings: loadSettings(),
+  };
+}
 
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'GO_TO_SETUP':
       return {
-        ...initialState,
+        ...makeInitialState(),
+        settings: state.settings,
         screen: 'setup',
         players: [createPlayer(0), createPlayer(1)],
       };
@@ -157,18 +198,31 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, screen: 'gameover', lastResult: null, punishmentCard: null };
 
     case 'RESET':
-      return initialState;
+      return { ...makeInitialState(), settings: state.settings };
+
+    case 'TOGGLE_SOUND':
+      return { ...state, settings: { ...state.settings, sound: !state.settings.sound } };
+
+    case 'TOGGLE_HAPTICS':
+      return { ...state, settings: { ...state.settings, haptics: !state.settings.haptics } };
 
     default:
       return state;
   }
 }
 
-const GameContext = createContext<GameState>(initialState);
+const GameContext = createContext<GameState>(makeInitialState());
 const GameDispatchContext = createContext<Dispatch<GameAction>>(() => {});
 
 export function GameProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [state, dispatch] = useReducer(gameReducer, undefined, makeInitialState);
+
+  useEffect(() => {
+    saveSettings(state.settings);
+    audio.setEnabled(state.settings.sound);
+    haptic.setEnabled(state.settings.haptics);
+  }, [state.settings]);
+
   return (
     <GameContext.Provider value={state}>
       <GameDispatchContext.Provider value={dispatch}>
