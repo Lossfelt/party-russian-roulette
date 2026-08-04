@@ -20,7 +20,7 @@ Et digitalt drikke- og festspill bygget med React, TypeScript og Vite. Spillet s
 
 ## Kom i gang
 
-Krever Node.js 18+.
+Krever Node.js `^20.19.0` eller `>=22.12.0` (kravet kommer fra Vite 8).
 
 ```bash
 npm install
@@ -56,7 +56,7 @@ All spillogikk ligger i `src/context/GameContext.tsx` som en `useReducer`. Trekk
 
 - React 18
 - TypeScript 5
-- Vite 5
+- Vite 8
 
 ## Lisens
 
