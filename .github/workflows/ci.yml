@@ -5,6 +5,11 @@ on:
     branches: [master]
   pull_request:
 
+# Minste nødvendige rettigheter for alle jobber. Jobber som trenger mer
+# (automatisk fletting av Dependabot) setter egne rettigheter.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
